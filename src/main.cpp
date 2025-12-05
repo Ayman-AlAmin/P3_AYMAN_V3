@@ -1,9 +1,13 @@
 #include <Arduino.h>
 #include <WiFi.h>
+#include <HTTPClient.h> // ajout pour faire la requête HTTP
 
 // Information de connexion WiFi
 const char* ssid = "Ayman";
 const char* password = "12345678"; // PAS SUR A REVOIR!!!!!!!!!!!!!!
+
+// API (remplace par ton endpoint)
+const char* apiUrl = "http://example.com/endpoint";
 
 // print interval
 unsigned long lastIpPrint = 0;
@@ -52,6 +56,13 @@ void loop() {
     if (WiFi.status() == WL_CONNECTED) {
       Serial.print("IP address: ");
       Serial.println(WiFi.localIP());
+
+      // GET request à l'API
+      HTTPClient http;
+      http.begin(apiUrl);
+      int httpCode = http.GET(); // on fait la requête,
+      (void)httpCode; // évite l'avertissement de variable non utilisée
+      http.end();
     } else {
       Serial.println("WiFi not connected");
     }
