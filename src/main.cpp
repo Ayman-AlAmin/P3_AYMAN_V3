@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include <WiFi.h>
-#include <HTTPClient.h> // ajout pour faire la requête HTTP
+#include <HTTPClient.h> 
 
 // Information de connexion WiFi
 const char* ssid = "Ayman";
@@ -57,7 +57,7 @@ void loop() {
       Serial.print("IP address: ");
       Serial.println(WiFi.localIP());
 
-      // GET request à l'API et lecture de certains headers
+      // GET request à l'API, lecture des headers et du corps
       HTTPClient http;
 
       // Déclare les headers que l'on souhaite lire
@@ -76,7 +76,6 @@ void loop() {
 
         if (httpCode >= 200 && httpCode < 300) {
           Serial.println("Request successful (2xx).");
-        
         } else if (httpCode >= 400 && httpCode < 500) {
           Serial.println("Client error (4xx).");
         } else if (httpCode >= 500) {
@@ -95,6 +94,16 @@ void loop() {
           Serial.print(": ");
           Serial.println(value);
         }
+
+        // Lit le corps de la réponse et l'affiche
+        String payload = http.getString();
+        Serial.println("Response payload:");
+        if (payload.length() > 0) {
+          Serial.println(payload);
+        } else {
+          Serial.println("<empty body>");
+        }
+
       } else {
         // httpCode <= 0 : erreur lors de la requête (connexion, DNS, timeouts...)
         Serial.print("HTTP request failed: ");
