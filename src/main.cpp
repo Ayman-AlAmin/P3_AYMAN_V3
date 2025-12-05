@@ -7,11 +7,11 @@ const char* ssid = "Ayman";
 const char* password = "12345678"; // PAS SUR A REVOIR!!!!!!!!!!!!!!
 
 // API (remplace par ton endpoint)
-const char* apiUrl = "http://example.com/endpoint";
+const char* apiUrl = "http://api.open-notify.org/iss-now.json";
 
 // print interval
 unsigned long lastIpPrint = 0;
-//const unsigned long ipPrintInterval = 5000; // 5 seconds
+const unsigned long ipPrintInterval = 5000; // 5 seconds
 
 void setup() {
   Serial.begin(115200);
@@ -52,7 +52,7 @@ void setup() {
 void loop() {
   unsigned long now = millis();
 
-  if (now - lastIpPrint >= 5000) {  
+  if (now - lastIpPrint >= ipPrintInterval) {  
     if (WiFi.status() == WL_CONNECTED) {
       Serial.print("IP address: ");
       Serial.println(WiFi.localIP());
@@ -60,8 +60,27 @@ void loop() {
       // GET request à l'API
       HTTPClient http;
       http.begin(apiUrl);
-      int httpCode = http.GET(); // on fait la requête,
-      (void)httpCode; // évite l'avertissement de variable non utilisée
+      int httpCode = http.GET(); // on fait la requête
+      if (httpCode > 0) {
+        // La requête a bien reçu une réponse (httpCode contient le code HTTP)
+        Serial.print("HTTP response code: ");
+        Serial.println(httpCode);
+
+        if (httpCode >= 200 && httpCode < 300) {
+          Serial.println("Request successful (2xx).");
+        
+        } else if (httpCode >= 400 && httpCode < 500) {
+          Serial.println("Client error (4xx).");
+        } else if (httpCode >= 500) {
+          Serial.println("Server error (5xx).");
+        } else {
+          Serial.println("Unexpected HTTP status code.");
+        }
+      } else {
+        // httpCode <= 0 : erreur lors de la requête (connexion, DNS, timeouts...)
+        Serial.print("HTTP request failed: ");
+        Serial.println(http.errorToString(httpCode));
+      }
       http.end();
     } else {
       Serial.println("WiFi not connected");
