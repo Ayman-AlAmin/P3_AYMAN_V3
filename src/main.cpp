@@ -1,10 +1,11 @@
 #include <Arduino.h>
 #include <WiFi.h>
-#include <HTTPClient.h> 
+#include <HTTPClient.h>
+#include <ArduinoJson.h> 
 
 // Information de connexion WiFi
-const char* ssid = "Ayman";
-const char* password = "12345678"; // PAS SUR A REVOIR!!!!!!!!!!!!!!
+const char* ssid = "IOT-6220";
+const char* password = "6220M@cSelection"; // PAS SUR A REVOIR!!!!!!!!!!!!!!
 
 // API (remplace par ton endpoint)
 const char* apiUrl = "http://api.open-notify.org/iss-now.json";
@@ -12,6 +13,18 @@ const char* apiUrl = "http://api.open-notify.org/iss-now.json";
 // print interval
 unsigned long lastIpPrint = 0;
 const unsigned long ipPrintInterval = 5000; // 5 seconds
+
+// Structures pour contenir la réponse JSON
+struct IssPosition {
+  String latitude;
+  String longitude;
+};
+
+struct IssResponse {
+  String message;
+  long timestamp;
+  IssPosition iss_position;
+};
 
 void setup() {
   Serial.begin(115200);
@@ -60,29 +73,16 @@ void loop() {
       // GET request à l'API, lecture des headers et du corps
       HTTPClient http;
 
-      // Déclare les headers que l'on souhaite lire
       const char* headerKeys[] = { "Content-Type", "Content-Length", "Server", "Date", "Connection" };
       const int headerCount = sizeof(headerKeys) / sizeof(headerKeys[0]);
 
       http.begin(apiUrl);
-      // Indique à HTTPClient de collecter ces headers dans la réponse
       http.collectHeaders(headerKeys, headerCount);
 
       int httpCode = http.GET(); // on fait la requête
       if (httpCode > 0) {
-        // La requête a bien reçu une réponse (httpCode contient le code HTTP)
         Serial.print("HTTP response code: ");
         Serial.println(httpCode);
-
-        if (httpCode >= 200 && httpCode < 300) {
-          Serial.println("Request successful (2xx).");
-        } else if (httpCode >= 400 && httpCode < 500) {
-          Serial.println("Client error (4xx).");
-        } else if (httpCode >= 500) {
-          Serial.println("Server error (5xx).");
-        } else {
-          Serial.println("Unexpected HTTP status code.");
-        }
 
         // Affiche les headers collectés
         Serial.println("Response headers:");
@@ -95,7 +95,7 @@ void loop() {
           Serial.println(value);
         }
 
-        // Lit le corps de la réponse et l'affiche
+        // Lit le corps de la réponse
         String payload = http.getString();
         Serial.println("Response payload:");
         if (payload.length() > 0) {
@@ -104,8 +104,49 @@ void loop() {
           Serial.println("<empty body>");
         }
 
+        // Désérialise le JSON dans une structure et affiche chaque champ
+        // Ajuster la taille du document si nécessaire; 512 suffit pour cette réponse
+        StaticJsonDocument<512> doc;
+        DeserializationError err = deserializeJson(doc, payload);
+        if (err) {
+          Serial.print("JSON deserialization failed: ");
+          Serial.println(err.c_str());
+        } else {
+          IssResponse resp;
+          // message
+          if (doc.containsKey("message")) resp.message = String((const char*)doc["message"]);
+          else resp.message = "<absent>";
+
+          // timestamp
+          if (doc.containsKey("timestamp")) resp.timestamp = doc["timestamp"].as<long>();
+          else resp.timestamp = 0;
+
+          // iss_position
+          JsonObject pos = doc["iss_position"].as<JsonObject>();
+          if (!pos.isNull()) {
+            if (pos.containsKey("latitude")) resp.iss_position.latitude = String((const char*)pos["latitude"]);
+            else resp.iss_position.latitude = "<absent>";
+            if (pos.containsKey("longitude")) resp.iss_position.longitude = String((const char*)pos["longitude"]);
+            else resp.iss_position.longitude = "<absent>";
+          } else {
+            resp.iss_position.latitude = "<absent>";
+            resp.iss_position.longitude = "<absent>";
+          }
+
+          // Affiche chaque champ séparément
+          Serial.println("Parsed JSON fields:");
+          Serial.print("  message: ");
+          Serial.println(resp.message);
+          Serial.print("  timestamp: ");
+          Serial.println(resp.timestamp);
+          Serial.println("  iss_position:");
+          Serial.print("    latitude: ");
+          Serial.println(resp.iss_position.latitude);
+          Serial.print("    longitude: ");
+          Serial.println(resp.iss_position.longitude);
+        }
+
       } else {
-        // httpCode <= 0 : erreur lors de la requête (connexion, DNS, timeouts...)
         Serial.print("HTTP request failed: ");
         Serial.println(http.errorToString(httpCode));
       }
