@@ -57,9 +57,17 @@ void loop() {
       Serial.print("IP address: ");
       Serial.println(WiFi.localIP());
 
-      // GET request à l'API
+      // GET request à l'API et lecture de certains headers
       HTTPClient http;
+
+      // Déclare les headers que l'on souhaite lire
+      const char* headerKeys[] = { "Content-Type", "Content-Length", "Server", "Date", "Connection" };
+      const int headerCount = sizeof(headerKeys) / sizeof(headerKeys[0]);
+
       http.begin(apiUrl);
+      // Indique à HTTPClient de collecter ces headers dans la réponse
+      http.collectHeaders(headerKeys, headerCount);
+
       int httpCode = http.GET(); // on fait la requête
       if (httpCode > 0) {
         // La requête a bien reçu une réponse (httpCode contient le code HTTP)
@@ -75,6 +83,17 @@ void loop() {
           Serial.println("Server error (5xx).");
         } else {
           Serial.println("Unexpected HTTP status code.");
+        }
+
+        // Affiche les headers collectés
+        Serial.println("Response headers:");
+        for (int i = 0; i < headerCount; ++i) {
+          String value = http.header(headerKeys[i]);
+          if (value.length() == 0) value = "<not present>";
+          Serial.print("  ");
+          Serial.print(headerKeys[i]);
+          Serial.print(": ");
+          Serial.println(value);
         }
       } else {
         // httpCode <= 0 : erreur lors de la requête (connexion, DNS, timeouts...)
