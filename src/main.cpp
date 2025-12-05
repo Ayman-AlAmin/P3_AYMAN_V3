@@ -5,24 +5,24 @@
 #include <WiFiClientSecure.h>
 #include <PubSubClient.h>
 
-// Information de connexion WiFi
+// SSID et password WiFi
 const char* ssid = "IOT-6220";
-const char* password = "6220M@cSelection"; // PAS SUR A REVOIR!!!!!!!!!!!!!!
+const char* password = "6220M@cSelection"; 
 
-// API (remplace par ton endpoint)
+// API 
 const char* apiUrl = "http://api.open-notify.org/iss-now.json";
 
-// MQTT / Thinger.io — remplace ces valeurs
+// Information MQTT
 const char* mqttBroker = "maisonneuve.aws.thinger.io";
 const int   mqttPort   = 8883;                
-const char* mqttUser   = "aymand";     // <-- remplis
-const char* mqttPassword = "wyhi31@";   // <-- remplis
-const char* mqttClientId = "AymanSense"; // <-- modifie si tu veux
-const char* mqttTopicBase = "/cm/2291718/coordonnees";  // <-- topic pour publier le JSON
+const char* mqttUser   = "aymand";    
+const char* mqttPassword = "wyhi31@";   
+const char* mqttClientId = "AymanSense";
+const char* mqttTopicBase = "/cm/2291718/coordonnees";  
 
 // print interval
 unsigned long lastIpPrint = 0;
-const unsigned long ipPrintInterval = 5000; // 5 seconds
+const unsigned long ipPrintInterval = 5000;
 
 // Structures pour contenir la réponse JSON
 struct IssPosition {
